@@ -1,9 +1,8 @@
-# TicTacToe 3-Link Drawing Robot 🤖
+# TicTacToe 3-Link Robot (RRP) 🤖
 
-A 2-DOF serial robot arm controlled via **Arduino** and **MATLAB** that plays
-**Tic Tac Toe** autonomously — physically drawing the grid, X's, and O's on
-paper using a pen servo, while running a **Minimax AI** to compete against a
-human opponent.
+A **3-link robot arm** (2 revolute + 1 prismatic) controlled via **Arduino** and **MATLAB**
+that plays **Tic Tac Toe** autonomously — physically drawing the grid, X's, and O's on
+paper, while running a **Minimax AI** to compete against a human opponent.
 
 [![Demo Video](https://img.shields.io/badge/▶_Watch_Demo-YouTube-red)](YOUR_YOUTUBE_LINK_HERE)
 ![MATLAB](https://img.shields.io/badge/MATLAB-R2022b+-orange)
@@ -21,43 +20,54 @@ human opponent.
 
 ## What This Project Does
 
-This project combines **robotics**, **embedded systems**, and **AI**:
+This project combines **robotics**, **embedded systems**, and **AI** into one
+physical system:
 
-1. A 2-joint robot arm is controlled by servo motors via Arduino Uno
-2. A third servo operates a rack-and-pinion **pen mechanism** (up/down)
+1. The robot has **two revolute joints** (R1, R2) controlling planar arm motion
+2. A **prismatic joint** (P3) drives a rack-and-pinion pen mechanism — extending
+   the pen down to touch paper and retracting it to lift clear
 3. MATLAB computes **closed-form planar inverse kinematics** to move the
    end-effector to any XY position on the drawing surface
 4. A **Minimax AI** plays optimally — it never loses
-5. Human clicks a square in the GUI → robot physically draws an **X**
-6. AI selects the best response → robot draws an **O**
+5. Human clicks a square in the GUI → robot draws an **X** on paper
+6. AI selects the best response → robot draws an **O** on paper
 7. Game continues until win or draw
 
 ```
 Human clicks square in GUI
         ↓
-IK computed → servo motion → X drawn on paper
+IK → R1 + R2 rotate → end-effector positions over square
+        ↓
+P3 extends → pen contacts paper → X drawn → P3 retracts
         ↓
 Minimax AI selects optimal move
         ↓
-IK computed → servo motion → O drawn on paper
+IK → R1 + R2 rotate → O drawn the same way
         ↓
 Win / Draw check → repeat or end
 ```
 
 ---
 
-## Hardware
+## Robot Configuration — RRP
 
-| Component | Details |
+| Joint | Type | Axis | Actuator | Arduino Pin |
+|---|---|---|---|---|
+| J1 | Revolute | Z | Servo motor | D3 |
+| J2 | Revolute | Z | Servo motor | D5 |
+| J3 | Prismatic | Z (vertical) | Servo + rack & pinion | D6 |
+
+**Link lengths:**
+
+| Link | Length |
 |---|---|
-| Robot arm | 2-DOF serial link (planar) |
-| Link 1 length | 110 mm |
-| Link 2 length | 104 mm |
+| Link 1 (J1 → J2) | 110 mm |
+| Link 2 (J2 → J3/EE) | 104 mm |
 | Base offset | X: −29 mm, Y: 121 mm, Z: 77 mm |
-| Microcontroller | Arduino Uno |
-| Joint 1 servo | Pin D3 |
-| Joint 2 servo | Pin D5 |
-| Pen servo | Pin D6 (rack and pinion) |
+
+The prismatic joint (J3) has two discrete states:
+- **Extended** (pen down) — servo position 0.20 → pen contacts paper
+- **Retracted** (pen up) — servo position 0.80 → pen lifted clear
 
 ---
 
@@ -104,24 +114,10 @@ test_robot
 
 ---
 
-## API Key Setup
-
-**Never hardcode API keys.** This repo uses a local config file that is
-excluded from Git:
-
-```matlab
-% 1. Copy the template
-copyfile('config.example.m', 'config.m')
-
-% 2. Open config.m and paste your key
-% 3. config.m is in .gitignore — never pushed to GitHub
-```
-
----
-
 ## Kinematics
 
-Closed-form 2-DOF planar IK:
+The RRP robot uses **closed-form 2-DOF planar IK** for the two revolute joints.
+The prismatic joint is controlled independently as a binary pen state.
 
 ```
 c₂ = (r² − a₁² − a₂²) / (2·a₁·a₂)
@@ -129,7 +125,7 @@ c₂ = (r² − a₁² − a₂²) / (2·a₁·a₂)
 θ₁ = atan2(y,x) − atan2(a₂·sin(θ₂), a₁ + a₂·cos(θ₂))
 ```
 
-Both elbow-up and elbow-down solutions are computed — the one closest
+Both elbow-up and elbow-down solutions are computed. The one closest
 to the current configuration is selected to minimise motion.
 
 ---
@@ -145,6 +141,17 @@ to the current configuration is selected to minimise motion.
 | 5 | Take any square |
 
 The robot **never loses**. Best human outcome is a draw.
+
+---
+
+## API Key Setup
+
+```matlab
+% Copy the template, add your key, it never gets pushed
+copyfile('config.example.m', 'config.m')
+```
+
+`config.m` is in `.gitignore` — it stays on your machine only.
 
 ---
 
