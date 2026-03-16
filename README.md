@@ -14,7 +14,7 @@ paper, while running a **Minimax AI** to compete against a human opponent.
 ## 📹 Demo
 
 > **[Watch the full demo here](YOUR_YOUTUBE_LINK_HERE)**
-> *(Replace with your YouTube URL when ready)*
+
 
 ---
 
