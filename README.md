@@ -128,6 +128,20 @@ c₂ = (r² − a₁² − a₂²) / (2·a₁·a₂)
 Both elbow-up and elbow-down solutions are computed. The one closest
 to the current configuration is selected to minimise motion.
 
+### Workspace
+
+The reachable workspace for the 2R planar arm (a₁ = 110 mm, a₂ = 104 mm) is
+an annulus from `|a₁ − a₂| = 6 mm` to `a₁ + a₂ = 214 mm`. The 9 Tic Tac Toe
+grid squares are mapped within the reachable region with a base offset to keep
+all squares well inside the arm's workspace.
+
+### Servo Mapping
+
+Raw MATLAB joint angles (radians) are converted to Arduino servo PWM values
+via a per-joint linear calibration stored in `robot_kinematics.m`. Calibrate
+with `test_robot.m` before the first game — small offsets in link zero-position
+add up to visible misalignment on paper.
+
 ---
 
 ## Minimax AI
