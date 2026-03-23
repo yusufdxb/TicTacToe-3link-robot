@@ -13,7 +13,17 @@ paper, while running a **Minimax AI** to compete against a human opponent.
 
 ## 📹 Demo
 
-> **(https://youtu.be/CDlnx14gcMo)**
+<p align="center">
+  <a href="https://youtu.be/CDlnx14gcMo">
+    <img src="https://img.youtube.com/vi/CDlnx14gcMo/maxresdefault.jpg" width="640">
+  </a>
+</p>
+**GUI Video**
+<p align="center">
+  <a href="https://youtu.be/jF2vLUy49Z8">
+    <img src="https://img.youtube.com/vi/jF2vLUy49Z8/maxresdefault.jpg" width="640">
+  </a>
+</p>
 
 
 ---
