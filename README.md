@@ -48,7 +48,7 @@ board coordinate --> planar IK --> servo targets --> pen down/up --> mark drawn 
 
 ## Validation Scaffold
 
-The repo now includes a concrete measurement plan instead of placeholder proof requirements.
+Measurement plan for repeatability and calibration checks:
 
 See: [docs/VALIDATION.md](docs/VALIDATION.md)
 
@@ -57,22 +57,6 @@ First metrics to add:
 - repeated-move deviation
 - calibration drift over a session
 - move duration per mark
-
-## Why This Repo Still Helps
-
-This repo is useful portfolio signal because it shows:
-- physical robot construction, not just software simulation
-- kinematics tied to actuation and user interaction
-- an end-to-end mechatronics project with visible behavior
-
-## Important Gaps
-
-The previous README used placeholder demo links. Those have been removed rather than faked.
-
-The highest-value next additions would be:
-- actual demo media
-- calibration notes and repeatability/error measurements
-- photos or diagrams of the physical arm and drawing workspace
 
 ## Quick Start
 
