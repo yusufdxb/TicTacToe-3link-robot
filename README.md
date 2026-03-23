@@ -46,9 +46,7 @@ The arm uses closed-form planar IK for the two revolute joints. The drawing mech
 board coordinate --> planar IK --> servo targets --> pen down/up --> mark drawn on paper
 ```
 
-## Validation Scaffold
-
-Measurement plan for repeatability and calibration checks:
+## Validation
 
 See: [docs/VALIDATION.md](docs/VALIDATION.md)
 
