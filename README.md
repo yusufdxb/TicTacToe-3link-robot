@@ -46,6 +46,18 @@ The arm uses closed-form planar IK for the two revolute joints. The drawing mech
 board coordinate --> planar IK --> servo targets --> pen down/up --> mark drawn on paper
 ```
 
+## Validation Scaffold
+
+The repo now includes a concrete measurement plan instead of placeholder proof requirements.
+
+See: [docs/VALIDATION.md](docs/VALIDATION.md)
+
+First metrics to add:
+- cell placement error
+- repeated-move deviation
+- calibration drift over a session
+- move duration per mark
+
 ## Why This Repo Still Helps
 
 This repo is useful portfolio signal because it shows:
