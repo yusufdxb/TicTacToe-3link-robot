@@ -36,6 +36,11 @@ classdef twolink_App < matlab.apps.AppBase
         axes1             matlab.ui.control.UIAxes
         % TicTacToe board buttons (3x3)
         BoardBtn          matlab.ui.control.Button
+        % Game-mode selector buttons
+        ModeBtn1          matlab.ui.control.Button   % Human vs ChatGPT
+        ModeBtn2          matlab.ui.control.Button   % ChatGPT vs Minimax
+        ModeBtn3          matlab.ui.control.Button   % Remote ROS2
+        ModeLabel         matlab.ui.control.Label
     end
 
     properties (Access = private)
@@ -80,6 +85,25 @@ classdef twolink_App < matlab.apps.AppBase
         gameActive      = false
         boardButtons    = []           % 3x3 cell of button handles
 
+        % ── Game mode ─────────────────────────────────────
+        % 'human_minimax'  — Human(X) vs Minimax(O)   [default]
+        % 'human_chatgpt'  — Human(X) vs ChatGPT(O)
+        % 'ai_vs_ai'       — ChatGPT(X) vs Minimax(O) [automated]
+        % 'remote_ros2'    — Remote human via ROS2, robot uses Minimax
+        gameMode        = 'human_minimax'
+
+        % ── ROS2 handles (remote_ros2 mode) ───────────────
+        ros2Node        = []
+        ros2PubRobotMove = []
+        ros2PubState    = []
+        ros2PubStatus   = []
+        ros2SubHuman    = []
+        ros2SubCmd      = []
+        ros2Timer       = []
+
+        % ── Path flag ─────────────────────────────────────
+        pathsAdded      = false
+
         % ── API config (loaded from config.m) ─────────────
         % DO NOT hardcode keys here — use config.m instead
         apiConfig       = []
@@ -98,6 +122,213 @@ classdef twolink_App < matlab.apps.AppBase
                 app.apiConfig = struct('openai_api_key', '');
                 warning(['config.m not found. ' ...
                     'Copy config.example.m to config.m and add your key.']);
+            end
+        end
+
+        % ── Ensure ai_strategies is on the MATLAB path ───
+        function ensurePaths(app)
+            if app.pathsAdded, return; end
+            this_dir = fileparts(which('twolink_App'));
+            strat_dir = fullfile(this_dir, 'ai_strategies');
+            if exist(strat_dir, 'dir')
+                addpath(strat_dir);
+            end
+            app.pathsAdded = true;
+        end
+
+        % ── ChatGPT move (player = 1 or 2) ───────────────
+        function [row, col, ok] = chatGPTMove(app, player)
+            app.ensurePaths();
+            try
+                [row, col] = strategy_chatgpt(app.board, player);
+                ok = true;
+            catch ME
+                warning('chatGPTMove failed: %s', ME.message);
+                row = -1; col = -1; ok = false;
+            end
+        end
+
+        % ── Set active mode button highlight ─────────────
+        function highlightModeButton(app, activeBtn)
+            on_color  = [0.20 0.60 0.90];
+            off_color = [0.94 0.94 0.94];
+            app.ModeBtn1.BackgroundColor = off_color;
+            app.ModeBtn2.BackgroundColor = off_color;
+            app.ModeBtn3.BackgroundColor = off_color;
+            activeBtn.BackgroundColor = on_color;
+        end
+
+        % ── Run fully automated ChatGPT(X) vs Minimax(O) ─
+        function runAIvsAI(app)
+            app.ensurePaths();
+            app.textStatus.Text = 'ChatGPT(X) vs Minimax(O) — running...';
+            drawnow;
+            player = 1;   % ChatGPT goes first as X
+            while true
+                result = app.checkWinner(app.board);
+                if result ~= 0, app.endGame(result); return; end
+
+                if player == 1
+                    % ChatGPT picks a move as X
+                    app.textStatus.Text = 'ChatGPT thinking (X)...';
+                    drawnow;
+                    [rr, cc, ok] = app.chatGPTMove(1);
+                    if ~ok || app.board(rr,cc) ~= 0
+                        app.textStatus.Text = 'ChatGPT returned bad move — heuristic used';
+                        drawnow;
+                        [rr, cc] = strategy_heuristic(app.board, 1);
+                    end
+                    app.board(rr,cc) = 1;
+                    app.updateBoardDisplay();
+                    if ~isempty(app.servo_motor1), app.drawX(rr, cc); end
+                    drawnow;
+                else
+                    % Minimax picks a move as O
+                    app.textStatus.Text = 'Minimax thinking (O)...';
+                    drawnow;
+                    [rr, cc] = app.minimaxBestMove();
+                    app.board(rr,cc) = 2;
+                    app.updateBoardDisplay();
+                    if ~isempty(app.servo_motor1), app.drawO(rr, cc); end
+                    drawnow;
+                end
+
+                result = app.checkWinner(app.board);
+                if result ~= 0, app.endGame(result); return; end
+                player = 3 - player;   % swap 1↔2
+                pause(0.8);            % brief pause so the human can watch
+            end
+        end
+
+        % ── ROS2 setup for remote_ros2 mode ──────────────
+        function setupROS2(app)
+            if ~isempty(app.ros2Node), return; end   % already up
+            try
+                app.ros2Node        = ros2node('/tictactoe_robot_gui');
+                app.ros2PubRobotMove = ros2publisher(app.ros2Node, '/tictactoe/robot_move', 'std_msgs/String');
+                app.ros2PubState    = ros2publisher(app.ros2Node, '/tictactoe/game_state',  'std_msgs/String');
+                app.ros2PubStatus   = ros2publisher(app.ros2Node, '/tictactoe/status',      'std_msgs/String');
+                app.ros2SubHuman    = ros2subscriber(app.ros2Node, '/tictactoe/human_move', 'std_msgs/String');
+                app.ros2SubCmd      = ros2subscriber(app.ros2Node, '/tictactoe/command',    'std_msgs/String');
+                % Timer polls at 5 Hz for incoming moves
+                app.ros2Timer = timer('Period', 0.2, 'ExecutionMode', 'fixedRate', ...
+                    'TimerFcn', @(~,~) app.ros2PollCallback());
+                start(app.ros2Timer);
+                app.textStatus.Text = 'ROS2 ready — waiting for remote player';
+                app.publishROS2Status('waiting');
+            catch ME
+                app.textStatus.Text = ['ROS2 failed: ' ME.message];
+            end
+        end
+
+        % ── ROS2 teardown ─────────────────────────────────
+        function teardownROS2(app)
+            if ~isempty(app.ros2Timer)
+                try, stop(app.ros2Timer); delete(app.ros2Timer); catch; end
+                app.ros2Timer = [];
+            end
+            if ~isempty(app.ros2Node)
+                try, clear app.ros2Node; catch; end
+                app.ros2Node = [];
+            end
+            app.ros2PubRobotMove = []; app.ros2PubState = [];
+            app.ros2PubStatus    = []; app.ros2SubHuman  = [];
+            app.ros2SubCmd       = [];
+        end
+
+        % ── ROS2 publish helpers ──────────────────────────
+        function publishROS2State(app)
+            if isempty(app.ros2PubState), return; end
+            msg      = ros2message('std_msgs/String');
+            flat     = app.board(:)';
+            msg.data = strrep(num2str(flat, '%d'), ' ', '');
+            send(app.ros2PubState, msg);
+        end
+
+        function publishROS2Status(app, status_str)
+            if isempty(app.ros2PubStatus), return; end
+            msg      = ros2message('std_msgs/String');
+            msg.data = status_str;
+            send(app.ros2PubStatus, msg);
+        end
+
+        % ── ROS2 timer poll callback ──────────────────────
+        function ros2PollCallback(app)
+            if ~app.gameActive, return; end
+
+            % Handle command messages
+            cmd_msg = app.ros2SubCmd.LatestMessage;
+            if ~isempty(cmd_msg)
+                app.ros2SubCmd.LatestMessage = [];
+                cmd = strtrim(char(cmd_msg.data));
+                if strcmpi(cmd, 'new_game')
+                    app.board      = zeros(3,3);
+                    app.gameActive = true;
+                    app.updateBoardDisplay();
+                    app.textStatus.Text = 'ROS2: new game — remote player''s turn';
+                    app.publishROS2State();
+                    app.publishROS2Status('waiting');
+                elseif strcmpi(cmd, 'quit')
+                    app.gameActive = false;
+                    app.textStatus.Text = 'ROS2: remote player disconnected';
+                    app.publishROS2Status('idle');
+                end
+            end
+
+            % Handle human move
+            move_msg = app.ros2SubHuman.LatestMessage;
+            if isempty(move_msg), return; end
+            app.ros2SubHuman.LatestMessage = [];
+
+            sq = str2double(strtrim(char(move_msg.data)));
+            if isnan(sq) || sq < 1 || sq > 9, return; end
+            sq  = floor(sq);
+            row = ceil(sq / 3);
+            col = mod(sq - 1, 3) + 1;
+            if app.board(row, col) ~= 0
+                app.publishROS2Status('waiting');
+                return;
+            end
+
+            % Apply human move
+            app.board(row, col) = 1;
+            app.textStatus.Text = sprintf('ROS2: remote played sq %d — drawing X...', sq);
+            app.updateBoardDisplay();
+            if ~isempty(app.servo_motor1), app.drawX(row, col); end
+            app.publishROS2State();
+
+            result = app.checkWinner(app.board);
+            if result ~= 0
+                app.endGame(result);
+                return;
+            end
+
+            % Robot (Minimax) responds
+            app.publishROS2Status('robot_turn');
+            app.textStatus.Text = 'Minimax thinking...';
+            drawnow;
+            [rr, cc] = app.minimaxBestMove();
+            app.board(rr, cc) = 2;
+            robot_sq = (rr-1)*3 + cc;
+
+            % Publish robot move to remote
+            if ~isempty(app.ros2PubRobotMove)
+                msg_rm      = ros2message('std_msgs/String');
+                msg_rm.data = num2str(robot_sq);
+                send(app.ros2PubRobotMove, msg_rm);
+            end
+
+            app.textStatus.Text = sprintf('Robot played sq %d — drawing O...', robot_sq);
+            app.updateBoardDisplay();
+            if ~isempty(app.servo_motor1), app.drawO(rr, cc); end
+            app.publishROS2State();
+
+            result = app.checkWinner(app.board);
+            if result ~= 0
+                app.endGame(result);
+            else
+                app.publishROS2Status('waiting');
+                app.textStatus.Text = 'ROS2: waiting for remote player...';
             end
         end
 
@@ -612,59 +843,131 @@ classdef twolink_App < matlab.apps.AppBase
 
         % ── TicTacToe callbacks ───────────────────────────
         function NewGame_Callback(app, ~)
+            if isempty(app.robot), msgbox('Click "Create Robot" first.'); return; end
+
+            % Tear down ROS2 if switching away from that mode
+            if ~strcmp(app.gameMode, 'remote_ros2')
+                app.teardownROS2();
+            end
+
             app.board      = zeros(3,3);
             app.gameActive = true;
-            app.textStatus.Text = 'Your turn — click a square';
             for idx = 1:9
                 app.boardButtons{idx}.Text            = '';
                 app.boardButtons{idx}.BackgroundColor = [0.94 0.94 0.94];
             end
             app.updateBoardDisplay();
+
+            switch app.gameMode
+                case 'human_minimax'
+                    app.textStatus.Text = 'Human(X) vs Minimax(O) — your turn';
+
+                case 'human_chatgpt'
+                    app.ensurePaths();
+                    app.textStatus.Text = 'Human(X) vs ChatGPT(O) — your turn';
+
+                case 'ai_vs_ai'
+                    app.textStatus.Text = 'ChatGPT(X) vs Minimax(O) — starting...';
+                    drawnow;
+                    app.runAIvsAI();
+                    return;
+
+                case 'remote_ros2'
+                    app.setupROS2();
+                    app.publishROS2State();
+                    app.publishROS2Status('waiting');
+            end
         end
 
         function BoardButton_Callback(app, ~, row, col)
             if ~app.gameActive, return; end
             if app.board(row,col) ~= 0, return; end
 
-            % Human move
+            % Remote / AI-vs-AI modes: board clicks are disabled
+            if ismember(app.gameMode, {'ai_vs_ai', 'remote_ros2'})
+                return;
+            end
+
+            % Human move (player 1 = X)
             app.board(row,col) = 1;
             app.textStatus.Text = 'Drawing X...';
             app.updateBoardDisplay();
-            if ~isempty(app.servo_motor1)
-                app.drawX(row, col);
-            end
+            if ~isempty(app.servo_motor1), app.drawX(row, col); end
 
             result = app.checkWinner(app.board);
-            if result ~= 0
-                app.endGame(result); return;
+            if result ~= 0, app.endGame(result); return; end
+
+            % AI responds as player 2 (O) — depends on mode
+            switch app.gameMode
+                case 'human_minimax'
+                    app.textStatus.Text = 'Minimax thinking...';
+                    drawnow;
+                    [rr, cc] = app.minimaxBestMove();
+
+                case 'human_chatgpt'
+                    app.textStatus.Text = 'ChatGPT thinking...';
+                    drawnow;
+                    [rr, cc, ok] = app.chatGPTMove(2);
+                    if ~ok || app.board(rr,cc) ~= 0
+                        app.textStatus.Text = 'ChatGPT error — heuristic used';
+                        drawnow;
+                        app.ensurePaths();
+                        [rr, cc] = strategy_heuristic(app.board, 2);
+                    end
+
+                otherwise
+                    return;
             end
 
-            % Robot move
-            app.textStatus.Text = 'Robot thinking...';
-            drawnow;
-            [rr, cc] = app.minimaxBestMove();
             app.board(rr,cc) = 2;
             app.textStatus.Text = 'Drawing O...';
             app.updateBoardDisplay();
-            if ~isempty(app.servo_motor1)
-                app.drawO(rr, cc);
-            end
+            if ~isempty(app.servo_motor1), app.drawO(rr, cc); end
 
             result = app.checkWinner(app.board);
-            if result ~= 0
-                app.endGame(result); return;
-            end
+            if result ~= 0, app.endGame(result); return; end
 
             app.textStatus.Text = 'Your turn — click a square';
         end
 
         function endGame(app, result)
             app.gameActive = false;
-            switch result
-                case 1, app.textStatus.Text = 'You win!';
-                case 2, app.textStatus.Text = 'Robot wins!';
-                case 3, app.textStatus.Text = 'Draw!';
+            switch app.gameMode
+                case 'human_minimax'
+                    msgs = {'You win!', 'Minimax wins!', 'Draw!'};
+                case 'human_chatgpt'
+                    msgs = {'You win!', 'ChatGPT wins!', 'Draw!'};
+                case 'ai_vs_ai'
+                    msgs = {'ChatGPT wins!', 'Minimax wins!', 'Draw!'};
+                case 'remote_ros2'
+                    msgs = {'Remote player wins!', 'Robot wins!', 'Draw!'};
+                    status_map = {'human_wins', 'robot_wins', 'draw'};
+                    app.publishROS2Status(status_map{result});
+                otherwise
+                    msgs = {'Player 1 wins!', 'Player 2 wins!', 'Draw!'};
             end
+            app.textStatus.Text = msgs{result};
+        end
+
+        % ── Mode selector callbacks ────────────────────────
+        function ModeHumanChatGPT_Callback(app, ~)
+            app.gameMode = 'human_chatgpt';
+            app.highlightModeButton(app.ModeBtn1);
+            app.textStatus.Text = 'Mode: Human(X) vs ChatGPT(O) — press New Game';
+            app.teardownROS2();
+        end
+
+        function ModeAIvsAI_Callback(app, ~)
+            app.gameMode = 'ai_vs_ai';
+            app.highlightModeButton(app.ModeBtn2);
+            app.textStatus.Text = 'Mode: ChatGPT(X) vs Minimax(O) — press New Game';
+            app.teardownROS2();
+        end
+
+        function ModeRemoteROS2_Callback(app, ~)
+            app.gameMode = 'remote_ros2';
+            app.highlightModeButton(app.ModeBtn3);
+            app.textStatus.Text = 'Mode: Remote ROS2 — press New Game to connect';
         end
 
     end % callbacks
@@ -749,13 +1052,47 @@ classdef twolink_App < matlab.apps.AppBase
             % Right panel — TicTacToe
             app.NewGameButton = uibutton(app.figure1, 'push');
             app.NewGameButton.Text            = 'New Game';
-            app.NewGameButton.Position        = [560 490 120 35];
+            app.NewGameButton.Position        = [560 510 110 30];
+            app.NewGameButton.BackgroundColor = [0.47 0.84 0.48];
             app.NewGameButton.ButtonPushedFcn = createCallbackFcn(app, @NewGame_Callback, true);
 
+            % Mode label
+            app.ModeLabel          = uilabel(app.figure1);
+            app.ModeLabel.Text     = 'Game Mode:';
+            app.ModeLabel.Position = [560 478 80 20];
+            app.ModeLabel.FontSize = 11;
+
+            % Mode button 1 — Human vs ChatGPT
+            app.ModeBtn1 = uibutton(app.figure1, 'push');
+            app.ModeBtn1.Text            = 'vs ChatGPT';
+            app.ModeBtn1.Position        = [645 474 95 26];
+            app.ModeBtn1.FontSize        = 11;
+            app.ModeBtn1.BackgroundColor = [0.94 0.94 0.94];
+            app.ModeBtn1.Tooltip         = 'Human(X) vs ChatGPT(O)';
+            app.ModeBtn1.ButtonPushedFcn = createCallbackFcn(app, @ModeHumanChatGPT_Callback, true);
+
+            % Mode button 2 — ChatGPT vs Minimax
+            app.ModeBtn2 = uibutton(app.figure1, 'push');
+            app.ModeBtn2.Text            = 'AI vs AI';
+            app.ModeBtn2.Position        = [745 474 80 26];
+            app.ModeBtn2.FontSize        = 11;
+            app.ModeBtn2.BackgroundColor = [0.94 0.94 0.94];
+            app.ModeBtn2.Tooltip         = 'ChatGPT(X) vs Minimax(O) — fully automated';
+            app.ModeBtn2.ButtonPushedFcn = createCallbackFcn(app, @ModeAIvsAI_Callback, true);
+
+            % Mode button 3 — Remote ROS2
+            app.ModeBtn3 = uibutton(app.figure1, 'push');
+            app.ModeBtn3.Text            = 'Remote ROS2';
+            app.ModeBtn3.Position        = [830 474 110 26];
+            app.ModeBtn3.FontSize        = 11;
+            app.ModeBtn3.BackgroundColor = [0.94 0.94 0.94];
+            app.ModeBtn3.Tooltip         = 'Remote human via ROS2 — robot responds with Minimax';
+            app.ModeBtn3.ButtonPushedFcn = createCallbackFcn(app, @ModeRemoteROS2_Callback, true);
+
             app.textStatus          = uilabel(app.figure1);
-            app.textStatus.Text     = 'Press New Game to start';
-            app.textStatus.Position = [550 450 250 30];
-            app.textStatus.FontSize = 13;
+            app.textStatus.Text     = 'Select a mode, then press New Game';
+            app.textStatus.Position = [550 448 420 22];
+            app.textStatus.FontSize = 12;
 
             % 3x3 board buttons
             app.boardButtons = cell(1,9);
@@ -808,6 +1145,7 @@ classdef twolink_App < matlab.apps.AppBase
         end
 
         function delete(app)
+            app.teardownROS2();
             delete(app.figure1);
         end
 
