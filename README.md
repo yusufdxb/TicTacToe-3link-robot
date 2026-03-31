@@ -151,6 +151,11 @@ c₂ = (r² − a₁² − a₂²) / (2·a₁·a₂)
 Both elbow-up and elbow-down solutions are computed. The one closest
 to the current configuration is selected to minimise motion.
 
+<p align="center">
+  <img src="kinematics/workspace.png" width="480"/>
+</p>
+<p align="center"><em>Reachable workspace of the 2-link planar arm (link lengths 110 mm + 104 mm)</em></p>
+
 ---
 
 ## Minimax AI
