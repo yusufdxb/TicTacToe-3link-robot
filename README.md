@@ -4,7 +4,7 @@ A **3-link robot arm** (2 revolute + 1 prismatic) controlled via **Arduino** and
 that plays **Tic Tac Toe** autonomously — physically drawing the grid, X's, and O's on
 paper, while running a **Minimax AI** to compete against a human opponent.
 
-[![Demo Video](https://img.shields.io/badge/▶_Watch_Demo-YouTube-red)](https://youtu.be/CDlnx14gcMo)
+[![Full Demo](https://img.shields.io/badge/▶_Full_Demo-YouTube-red)](https://www.youtube.com/watch?v=9wfI7847dPw)
 ![MATLAB](https://img.shields.io/badge/MATLAB-R2022b+-orange)
 ![Arduino](https://img.shields.io/badge/Arduino-Uno-teal)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -12,6 +12,18 @@ paper, while running a **Minimax AI** to compete against a human opponent.
 ---
 
 ## 📹 Demo
+
+**Full Project Demo** — end-to-end gameplay: grid drawing, human moves, Minimax AI response, and physical X/O drawing.
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=9wfI7847dPw">
+    <img src="https://img.youtube.com/vi/9wfI7847dPw/maxresdefault.jpg" width="640">
+  </a>
+</p>
+
+### Clips
+
+**Robot Drawing**
 
 <p align="center">
   <a href="https://youtu.be/CDlnx14gcMo">
