@@ -57,18 +57,16 @@ physical system:
 6. AI selects the best response → robot draws an **O** on paper
 7. Game continues until win or draw
 
-```
-Human clicks square in GUI
-        ↓
-IK → R1 + R2 rotate → end-effector positions over square
-        ↓
-P3 extends → pen contacts paper → X drawn → P3 retracts
-        ↓
-Minimax AI selects optimal move
-        ↓
-IK → R1 + R2 rotate → O drawn the same way
-        ↓
-Win / Draw check → repeat or end
+```mermaid
+graph TD
+    A[Human clicks square in GUI]
+    B["IK, R1 + R2 rotate, end-effector positions over square"]
+    C["P3 extends, pen contacts paper, X drawn, P3 retracts"]
+    D[Minimax AI selects optimal move]
+    E["IK, R1 + R2 rotate, O drawn the same way"]
+    F[Win / Draw check, repeat or end]
+
+    A --> B --> C --> D --> E --> F
 ```
 
 ---
@@ -193,16 +191,21 @@ completes in milliseconds with no pruning required.
 
 Play the robot from another laptop over Wi-Fi — no physical proximity required.
 
-```
-Remote Laptop                    Robot Laptop (Arduino)
-─────────────────────────────    ──────────────────────────────────
-tictactoe_ros2_remote.m      ←→  tictactoe_ros2_robot.m
-                                       │
-                                       ├─ Minimax picks robot move
-                                       ├─ IK → servo angles
-                                       └─ Arduino draws X / O on paper
-
-              ROS2 DDS  (same Wi-Fi hotspot or LAN)
+```mermaid
+graph LR
+    subgraph Remote["Remote Laptop"]
+        R[tictactoe_ros2_remote.m]
+    end
+    subgraph Robot["Robot Laptop (Arduino)"]
+        B[tictactoe_ros2_robot.m]
+        M[Minimax picks robot move]
+        IK[IK to servo angles]
+        A[Arduino draws X / O on paper]
+        B --> M
+        B --> IK
+        B --> A
+    end
+    R <-->|ROS2 DDS, same Wi-Fi hotspot or LAN| B
 ```
 
 **ROS2 topics:**
