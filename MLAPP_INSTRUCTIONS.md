@@ -21,12 +21,12 @@ git push origin main
 ### What is a .mlapp file?
 
 A `.mlapp` is a ZIP archive containing XML. GitHub renders it as a
-binary file — you won't see syntax highlighting, but it uploads, downloads,
+binary file, you won't see syntax highlighting, but it uploads, downloads,
 and versions correctly just like any other file.
 
 To open it from GitHub: clone the repo, then double-click the `.mlapp`
-file in MATLAB's file browser — App Designer opens it automatically.
+file in MATLAB's file browser, App Designer opens it automatically.
 
 ### Running without the GUI
 
-Use `main.m` for a terminal-based game loop — no GUI required.
+Use `main.m` for a terminal-based game loop, no GUI required.

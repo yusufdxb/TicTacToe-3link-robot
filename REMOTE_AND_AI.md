@@ -37,7 +37,7 @@ Full encoding reference: [`ros2/ros2_topics.md`](ros2/ros2_topics.md)
 
 ---
 
-### Setup — Both Machines
+### Setup: Both Machines
 
 1. Install ROS2 Humble (or later):
 
@@ -61,7 +61,7 @@ ros2 topic list   # should see topics from the other machine once nodes are runn
 
 ---
 
-### Running — Robot-Side Machine
+### Running: Robot-Side Machine
 
 In MATLAB on the machine with the Arduino:
 
@@ -88,7 +88,7 @@ The node will print:
 
 ---
 
-### Running — Remote Player Machine
+### Running: Remote Player Machine
 
 In MATLAB on the remote laptop:
 
@@ -139,7 +139,7 @@ ros2 topic list
 
 ---
 
-## AI Strategy Comparison — Minimax vs ChatGPT
+## AI Strategy Comparison: Minimax vs ChatGPT
 
 ### Strategies
 
@@ -212,7 +212,7 @@ Random(X)  vs Heuristic(O)                    4      25      71       4.0%
 
 - **Minimax never loses** in any matchup (0 losses in every row where
   Minimax is X or O).
-- **Going first is a structural advantage** in TicTacToe — Minimax as X
+- **Going first is a structural advantage** in TicTacToe, Minimax as X
   wins 74 % against random, but Minimax as O still wins 69 % (because
   random makes losing moves even when going first).
 - **Heuristic vs Random** confirms the heuristic is meaningfully stronger
@@ -224,7 +224,7 @@ Random(X)  vs Heuristic(O)                    4      25      71       4.0%
 **Minimax vs ChatGPT (requires API key):**
 
 GPT-4o makes legal moves and understands basic TicTacToe rules, but does
-not play optimally. In testing it performs at roughly heuristic level —
+not play optimally. In testing it performs at roughly heuristic level, 
 it wins immediately when possible and blocks obvious threats, but misses
 multi-move fork setups. Expected results with a valid key:
 

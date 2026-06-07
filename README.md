@@ -1,7 +1,7 @@
 # TicTacToe 3-Link Robot (RRP) 🤖
 
 A **3-link robot arm** (2 revolute + 1 prismatic) controlled via **Arduino** and **MATLAB**
-that plays **Tic Tac Toe** autonomously — physically drawing the grid, X's, and O's on
+that plays **Tic Tac Toe** autonomously, physically drawing the grid, X's, and O's on
 paper, while running a **Minimax AI** to compete against a human opponent.
 
 [![Full Demo](https://img.shields.io/badge/▶_Full_Demo-YouTube-red)](https://www.youtube.com/watch?v=9wfI7847dPw)
@@ -13,7 +13,7 @@ paper, while running a **Minimax AI** to compete against a human opponent.
 
 ## 📹 Demo
 
-**Full Project Demo** — end-to-end gameplay: grid drawing, human moves, Minimax AI response, and physical X/O drawing.
+**Full Project Demo**: end-to-end gameplay: grid drawing, human moves, Minimax AI response, and physical X/O drawing.
 
 <p align="center">
   <a href="https://www.youtube.com/watch?v=9wfI7847dPw">
@@ -48,11 +48,11 @@ This project combines **robotics**, **embedded systems**, and **AI** into one
 physical system:
 
 1. The robot has **two revolute joints** (R1, R2) controlling planar arm motion
-2. A **prismatic joint** (P3) drives a rack-and-pinion pen mechanism — extending
+2. A **prismatic joint** (P3) drives a rack-and-pinion pen mechanism, extending
    the pen down to touch paper and retracting it to lift clear
 3. MATLAB computes **closed-form planar inverse kinematics** to move the
    end-effector to any XY position on the drawing surface
-4. A **Minimax AI** plays optimally — it never loses
+4. A **Minimax AI** plays optimally, it never loses
 5. Human clicks a square in the GUI → robot draws an **X** on paper
 6. AI selects the best response → robot draws an **O** on paper
 7. Game continues until win or draw
@@ -71,7 +71,7 @@ graph TD
 
 ---
 
-## Robot Configuration — RRP
+## Robot Configuration: RRP
 
 | Joint | Type | Axis | Actuator | Arduino Pin |
 |---|---|---|---|---|
@@ -88,8 +88,8 @@ graph TD
 | Base offset | X: −29 mm, Y: 121 mm, Z: 77 mm |
 
 The prismatic joint (J3) has two discrete states:
-- **Extended** (pen down) — servo position 0.20 → pen contacts paper
-- **Retracted** (pen up) — servo position 0.80 → pen lifted clear
+- **Extended** (pen down), servo position 0.20 → pen contacts paper
+- **Retracted** (pen up), servo position 0.80 → pen lifted clear
 
 ---
 
@@ -97,7 +97,7 @@ The prismatic joint (J3) has two discrete states:
 
 ```
 TicTacToe-3link-robot/
-├── TicTacToe_App.mlapp          ← GUI — open in MATLAB App Designer
+├── TicTacToe_App.mlapp          ← GUI, open in MATLAB App Designer
 ├── twolink_App.m                ← Full app class (all callbacks)
 ├── robot_kinematics.m           ← Planar IK, FK, servo calibration
 ├── drawing_functions.m          ← drawGrid, drawX, drawO, pen control
@@ -112,8 +112,8 @@ TicTacToe-3link-robot/
 │   ├── strategy_random.m        ← Random legal move (baseline)
 │   └── strategy_chatgpt.m       ← GPT-4o via OpenAI API (needs config.m)
 ├── ros2/
-│   ├── tictactoe_ros2_robot.m   ← MATLAB ROS2 node — robot side (Arduino)
-│   ├── tictactoe_ros2_remote.m  ← MATLAB ROS2 node — remote player side
+│   ├── tictactoe_ros2_robot.m   ← MATLAB ROS2 node, robot side (Arduino)
+│   ├── tictactoe_ros2_remote.m  ← MATLAB ROS2 node, remote player side
 │   └── ros2_topics.md           ← Full topic/message encoding reference
 ├── REMOTE_AND_AI.md             ← Remote ROS2 gameplay + AI comparison docs
 ├── .gitignore                   ← Keeps config.m (secrets) off GitHub
@@ -189,7 +189,7 @@ completes in milliseconds with no pruning required.
 
 ## Remote ROS2 Gameplay
 
-Play the robot from another laptop over Wi-Fi — no physical proximity required.
+Play the robot from another laptop over Wi-Fi, no physical proximity required.
 
 ```mermaid
 graph LR
@@ -212,13 +212,13 @@ graph LR
 
 | Topic | Direction | Encoding |
 |-------|-----------|----------|
-| `/tictactoe/human_move` | remote → robot | `"1"` – `"9"` (square) |
-| `/tictactoe/robot_move` | robot → remote | `"1"` – `"9"` (square) |
+| `/tictactoe/human_move` | remote → robot | `"1"`: `"9"` (square) |
+| `/tictactoe/robot_move` | robot → remote | `"1"`: `"9"` (square) |
 | `/tictactoe/game_state` | robot → remote | 9-char board, e.g. `"010020000"` |
 | `/tictactoe/command` | remote → robot | `"new_game"` / `"draw_grid"` / `"quit"` |
 | `/tictactoe/status` | robot → remote | `"waiting"` / `"robot_wins"` / `"draw"` / … |
 
-**Quick start (both machines — same `ROS_DOMAIN_ID`):**
+**Quick start (both machines, same `ROS_DOMAIN_ID`):**
 
 ```bash
 # Both machines:
@@ -242,13 +242,13 @@ Full setup guide, troubleshooting, and CLI test commands:
 
 ---
 
-## AI Strategy Comparison — Minimax vs ChatGPT
+## AI Strategy Comparison: Minimax vs ChatGPT
 
 Four interchangeable strategies, all sharing the same `(board, player) → (row, col)` interface:
 
 | Strategy | File | Notes |
 |----------|------|-------|
-| `minimax` | `ai_strategies/strategy_minimax.m` | Optimal — never loses |
+| `minimax` | `ai_strategies/strategy_minimax.m` | Optimal, never loses |
 | `heuristic` | `ai_strategies/strategy_heuristic.m` | Win > block > center > corner; no lookahead |
 | `random` | `ai_strategies/strategy_random.m` | Uniform random; baseline |
 | `chatgpt` | `ai_strategies/strategy_chatgpt.m` | GPT-4o; falls back to heuristic if key absent |
@@ -281,7 +281,7 @@ Random(X)  vs Heuristic(O)                    4      25      71       4.0%
 ```
 
 Minimax has **zero losses** in every matchup. GPT-4o plays at roughly
-heuristic level — legal and threat-aware but unable to set up multi-move
+heuristic level, legal and threat-aware but unable to set up multi-move
 forks. Full analysis: [`REMOTE_AND_AI.md`](REMOTE_AND_AI.md)
 
 ---
@@ -293,7 +293,7 @@ forks. Full analysis: [`REMOTE_AND_AI.md`](REMOTE_AND_AI.md)
 copyfile('config.example.m', 'config.m')
 ```
 
-`config.m` is in `.gitignore` — it stays on your machine only.
+`config.m` is in `.gitignore`: it stays on your machine only.
 Used by `strategy_chatgpt.m` and the app's optional ChatGPT mode.
 
 ---

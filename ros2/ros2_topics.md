@@ -1,4 +1,4 @@
-# ROS2 Topic Reference — TicTacToe Robot
+# ROS2 Topic Reference: TicTacToe Robot
 
 All topics use `std_msgs/String`. Message encoding is documented below.
 
@@ -6,8 +6,8 @@ All topics use `std_msgs/String`. Message encoding is documented below.
 
 | Topic | Direction | Publisher | Subscriber | Encoding |
 |-------|-----------|-----------|------------|----------|
-| `/tictactoe/human_move` | remote → robot | remote player | robot node | `"1"` – `"9"` |
-| `/tictactoe/robot_move` | robot → remote | robot node | remote player | `"1"` – `"9"` |
+| `/tictactoe/human_move` | remote → robot | remote player | robot node | `"1"`: `"9"` |
+| `/tictactoe/robot_move` | robot → remote | robot node | remote player | `"1"`: `"9"` |
 | `/tictactoe/game_state` | robot → remote | robot node | remote player | 9-char board string |
 | `/tictactoe/status` | robot → remote | robot node | remote player | status keyword |
 | `/tictactoe/command` | remote → robot | remote player | robot node | command keyword |
@@ -51,9 +51,9 @@ Example: `"010020000"` means:
 | `"idle"` | Node started, no game active |
 | `"waiting"` | Ready for human move |
 | `"robot_turn"` | Robot is computing or drawing |
-| `"human_wins"` | Game over — human won |
-| `"robot_wins"` | Game over — robot won |
-| `"draw"` | Game over — draw |
+| `"human_wins"` | Game over, human won |
+| `"robot_wins"` | Game over, robot won |
+| `"draw"` | Game over, draw |
 
 ### `/tictactoe/command`
 
@@ -92,7 +92,7 @@ ros2 topic pub --once /tictactoe/command std_msgs/String '{data: "new_game"}'
 ## DDS / Network Notes
 
 - Both machines must be on the **same network segment** (same Wi-Fi hotspot, same Ethernet switch, or same LAN).
-- `ROS_DOMAIN_ID` must match on both machines (default `0` if not set — set to any integer, e.g. `42`).
+- `ROS_DOMAIN_ID` must match on both machines (default `0` if not set, set to any integer, e.g. `42`).
 - No ROS2 master node is needed (DDS peer discovery is automatic).
 - If topics do not appear across machines, check firewall rules: ROS2 (CycloneDDS) uses UDP multicast on ports 7400-7500 by default.
 - On hotspot: some hotspots block multicast. If discovery fails, set `RMW_IMPLEMENTATION=rmw_cyclonedds_cpp` and use a unicast config (see `~/helix_ws/cyclonedds_loopback.xml` for reference).

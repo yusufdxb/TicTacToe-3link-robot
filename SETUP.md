@@ -1,4 +1,4 @@
-# Setup Guide — TicTacToe 3-Link Robot
+# Setup Guide: TicTacToe 3-Link Robot
 
 Complete instructions for getting the TicTacToe robot running, from dependency installation to first game.
 
@@ -18,10 +18,10 @@ Complete instructions for getting the TicTacToe robot running, from dependency i
 ### Robotics Toolbox
 In MATLAB:
 ```matlab
-% Option A — MATLAB Add-On Explorer (recommended)
+% Option A, MATLAB Add-On Explorer (recommended)
 % Home → Add-Ons → Get Add-Ons → search "Robotics Toolbox Peter Corke"
 
-% Option B — Command line
+% Option B, Command line
 websave('rvctools.zip', 'https://petercorke.com/download/rvctools.zip');
 unzip('rvctools.zip');
 addpath(genpath('rvctools'));
@@ -44,7 +44,7 @@ cd TicTacToe-3link-robot
 
 ---
 
-## 3. Configure API Key (Optional — for ChatGPT opponent)
+## 3. Configure API Key (Optional: for ChatGPT opponent)
 
 ```matlab
 % Copy the template
@@ -75,11 +75,11 @@ open('TicTacToe_App.mlapp')
 ```
 
 Then in the GUI:
-1. **Arduino menu → Connect** — enter your COM port
+1. **Arduino menu → Connect**: enter your COM port
 2. **Arduino menu → Connect Motor**
 3. Click **Create Robot**
 4. Click **New Game**
-5. Click any square to make your move — the robot draws on paper
+5. Click any square to make your move, the robot draws on paper
 
 ### Terminal Mode (no GUI)
 ```matlab
