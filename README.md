@@ -1,4 +1,4 @@
-# TicTacToe 3-Link Robot (RRP) 🤖
+# TicTacToe 3-Link Robot (RRP)
 
 A **3-link robot arm** (2 revolute + 1 prismatic) controlled via **Arduino** and **MATLAB**
 that plays **Tic Tac Toe** autonomously, physically drawing the grid, X's, and O's on
@@ -11,7 +11,7 @@ paper, while running a **Minimax AI** to compete against a human opponent.
 
 ---
 
-## 📹 Demo
+## Demo
 
 **Full Project Demo**: end-to-end gameplay: grid drawing, human moves, Minimax AI response, and physical X/O drawing.
 
